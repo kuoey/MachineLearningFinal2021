@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import mltools as ml
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import roc_curve, auc
 from sklearn import tree
@@ -17,37 +18,41 @@ Xte = np.genfromtxt("data/X_test.txt")
 Xtr, Xva, Ytr, Yva = ml.splitData(X, Y, 0.75)
 
 # Random Forest Classifier       def=100      def=auto          def=none
-rfC = RandomForestClassifier(n_estimators=20, max_features=10, max_depth=20)
+rfC = RandomForestClassifier(n_estimators=100, max_features=4, max_depth=20)
 
 # KNN classifier             def=2
 knnC = KNeighborsClassifier(p=1)
 
 # AdaBoost Classifier
-decTree = tree.DecisionTreeClassifier(max_depth=3)
-adaC = AdaBoostClassifier(base_estimator=decTree, n_estimators=50)
+# decTree = tree.DecisionTreeClassifier(max_depth=3)
+# adaC = AdaBoostClassifier(base_estimator=decTree, n_estimators=50)
 
-listOfC = [rfC, knnC, adaC]
+# Gradient Boosting
+gradC = GradientBoostingClassifier(max_depth=10, n_estimators=750, max_features=4)
 
-listOfPredictions = []
+listOfC = [rfC, knnC, gradC]
+
+listOfPredictionsAUC = []
+listOfPredictionsKaggle = []
 for c in listOfC:
     c.fit(Xtr, Ytr)
 
     # Use this line for testing out the AUC Curve
-    listOfPredictions.append(c.predict_proba(Xva))
+    listOfPredictionsAUC.append(c.predict_proba(Xva))
 
     # Use this line for writing to Kaggle
-    # listOfPredictions.append(clf.predict_proba(Xte))
+    listOfPredictionsKaggle.append(c.predict_proba(Xte))
 
-predictions = np.mean(np.array([listOfPredictions[0], listOfPredictions[1], listOfPredictions[2]]), axis=0)
-
+predictionsAUC = np.mean(np.array([listOfPredictionsAUC[0], listOfPredictionsAUC[1], listOfPredictionsAUC[2]]), axis=0)
+predictionsKaggle = np.mean(np.array([listOfPredictionsKaggle[0], listOfPredictionsKaggle[1], listOfPredictionsKaggle[2]]), axis=0)
 
 # get the auc data
-false_positive_rate, true_positive_rate, thresholds = roc_curve(Yva, predictions[:, 1])
+false_positive_rate, true_positive_rate, thresholds = roc_curve(Yva, predictionsAUC[:, 1])
 roc_auc = auc(false_positive_rate, true_positive_rate)
 print(roc_auc)
 
 np.savetxt('kaggle2021_predictions.txt',
-           np.vstack((np.arange(len(predictions)), predictions[:, 1])).T,
+           np.vstack((np.arange(len(predictionsKaggle)), predictionsKaggle[:, 1])).T,
            '%d, %.2f', header='ID,Prob1', comments='', delimiter=',')
 
 
