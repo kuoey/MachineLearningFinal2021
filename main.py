@@ -16,24 +16,32 @@ Xte = np.genfromtxt("data/X_test.txt")
 
 Xtr, Xva, Ytr, Yva = ml.splitData(X, Y, 0.75)
 
-knn_clf = KNeighborsClassifier(algorithm='auto', leaf_size=30, metric='minkowski',
-                               metric_params=None, n_jobs=1, n_neighbors=5, p=1,
-                               weights='uniform')
+# Random Forest Classifier       def=100      def=auto          def=none
+rfC = RandomForestClassifier(n_estimators=20, max_features=10, max_depth=20)
 
-listOfClf = [knn_clf]
+# KNN classifier             def=2
+knnC = KNeighborsClassifier(p=1)
+
+# AdaBoost Classifier
+decTree = tree.DecisionTreeClassifier(max_depth=3)
+adaC = AdaBoostClassifier(base_estimator=decTree, n_estimators=50)
+
+listOfC = [rfC, knnC, adaC]
 
 listOfPredictions = []
-for clf in listOfClf:
-    clf.fit(Xtr, Ytr)
+for c in listOfC:
+    c.fit(Xtr, Ytr)
 
     # Use this line for testing out the AUC Curve
-    listOfPredictions.append(clf.predict_proba(Xva))
+    listOfPredictions.append(c.predict_proba(Xva))
 
     # Use this line for writing to Kaggle
     # listOfPredictions.append(clf.predict_proba(Xte))
 
-predictions = np.mean(np.array([listOfPredictions[0]]), axis=0)
+predictions = np.mean(np.array([listOfPredictions[0], listOfPredictions[1], listOfPredictions[2]]), axis=0)
 
+
+# get the auc data
 false_positive_rate, true_positive_rate, thresholds = roc_curve(Yva, predictions[:, 1])
 roc_auc = auc(false_positive_rate, true_positive_rate)
 print(roc_auc)
